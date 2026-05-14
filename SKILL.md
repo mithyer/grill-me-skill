@@ -1,21 +1,111 @@
 ---
 name: grill-me
-description: Interview the user relentlessly about a plan or design until reaching shared understanding, resolving each branch of the decision tree. Use when user wants to stress-test a plan, get grilled on their design, or mentions "grill me".
+description: Use when the user wants Codex to stress-test a plan, design, architecture, implementation approach, or code-change strategy before coding. Codex should interrogate assumptions, inspect available files when possible, ask only necessary clarifying questions, and converge on a concrete decision summary.
 ---
 
-Interview the user relentlessly about every aspect of their plan until you reach a shared understanding. Walk down each branch of the design tree, resolving dependencies between decisions one-by-one.
+# Grill Me
 
-## How to ask questions
+Use this skill when the user wants a plan, design, architecture, or implementation approach to be challenged before work begins.
 
-Use the **AskUserQuestion tool** for every question you ask. Never pose questions as plain text in your response — always use the multiple-choice popup so the user can quickly select an answer or type a custom one.
+This skill is optimized for Codex. Do not rely on interactive popup tools or non-Codex-specific tools. Ask questions in normal chat only when the answer cannot be inferred from the repository, files, command output, or prior context.
 
-Ask **one question at a time**. Wait for the user's answer before moving to the next question. This keeps the conversation focused and prevents overwhelm.
+## Core behavior
 
-For each question, provide 2–4 concrete multiple-choice options representing the most likely answers or directions. Think about what the user would realistically choose — generic options like "Yes" / "No" aren't helpful unless the question is genuinely binary. The user always has the "Other" field available to write something custom.
+Interrogate the plan until the design is clear enough to implement safely.
 
-## Flow
+Work from the outside in:
 
-1. After receiving an answer, briefly acknowledge the decision (1–2 sentences max), then immediately ask the next question via AskUserQuestion.
-2. If a question can be answered by exploring the codebase or files, explore them yourself instead of asking the user.
-3. Continue until all branches of the design tree are resolved.
-4. When finished, provide a concise summary of all decisions made.
+1. Identify the goal and success criteria.
+2. Identify the affected module or subsystem.
+3. Identify the specific methods, files, APIs, data flows, or commands involved.
+4. Identify constraints, risks, edge cases, and verification steps.
+5. Resolve open decisions before proposing implementation.
+
+Prefer evidence over questions. If a question can be answered by reading code, configuration, tests, docs, logs, or project files, inspect those sources first.
+
+## Question policy
+
+Ask at most one question at a time.
+
+Ask a question only when:
+
+- The answer materially changes the design or implementation.
+- The answer cannot be inferred from available files or context.
+- Proceeding without it would risk building the wrong thing.
+
+When asking, provide 2–4 concrete options plus an “Other” option. Avoid generic yes/no questions unless the decision is genuinely binary.
+
+Good format:
+
+```text
+Which compatibility target should this design preserve?
+
+A. Preserve the current public API exactly
+B. Allow internal API changes only
+C. Allow public API changes with migration notes
+D. Other: ...
+```
+
+After the user answers, briefly acknowledge the decision and continue to the next unresolved branch.
+
+## Repository-first workflow
+
+Before asking the user, Codex should usually inspect:
+
+- Relevant `AGENTS.md` files and project instructions.
+- Nearby README or design docs.
+- Existing module boundaries.
+- Current call sites and tests.
+- Existing error handling, naming, and style conventions.
+
+Do not ask the user for information that is already discoverable in the codebase.
+
+## Design-tree coverage
+
+Walk the design tree branch by branch. Cover only branches that matter for the current task.
+
+Common branches:
+
+- Goal: What problem is being solved?
+- Scope: What is in scope and out of scope?
+- Users/callers: Who or what depends on this behavior?
+- Inputs/outputs: What data enters and leaves the system?
+- State: What persists, mutates, caches, or invalidates?
+- Failure modes: What happens on invalid input, timeout, missing data, or partial failure?
+- Compatibility: What must remain backward-compatible?
+- Security/privacy: What data or permissions are sensitive?
+- Performance: What must remain fast or bounded?
+- Tests: What proves the design works?
+- Rollout: Is migration, feature flagging, or fallback needed?
+
+## Coding constraint
+
+If this skill is used before coding, do not start editing code until the important design branches are resolved.
+
+When implementation is eventually needed:
+
+- Prefer changing one module over multiple modules.
+- Prefer changing one method over multiple methods.
+- Keep changes local unless the design requires a wider change.
+- Preserve existing conventions unless there is a clear reason not to.
+- Add or update the smallest relevant verification.
+
+## Completion output
+
+When the grilling phase is complete, provide a concise decision summary:
+
+```text
+Decisions resolved:
+- Goal: ...
+- Scope: ...
+- Module/method: ...
+- Edge cases: ...
+- Verification: ...
+
+Recommended implementation plan:
+1. ...
+2. ...
+3. ...
+```
+
+If there are still unresolved decisions, list them explicitly and explain why they block implementation.
